@@ -23,7 +23,7 @@ const PORT = 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-//APP_DATA.USER_ROUTE => '/user'
+
 app.use(APP_DATA.USER_ROUTE, userRoute);
 
 app.listen(PORT, ()=> {

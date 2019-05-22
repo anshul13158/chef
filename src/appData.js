@@ -13,3 +13,10 @@ module.exports.dbData = {
 	DB_HOST : 'localhost'
 };
 
+module.exports.routeData = {
+	FETCH_USERS : "/fetch",
+	SIGNIN : "/signIn",
+	SIGNUP : "/signUp",
+	UPDATE : "/update"
+}
+
