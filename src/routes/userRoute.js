@@ -10,21 +10,22 @@ const model = require('../db/model.js');
 //DB Connection object
 const dbConn = require('../db/config').conn;
 
+const appData = require('../appData').appData;
+
 //File contains string(like routes)
 const ROUTE_DATA = require('../appData').routeData;
 
 //File contains SQL queries
 const SQL = require('../db/sqlQueries');
 
-
-const passHash = '$2a$10$fjjhjxhtHrBXcPsxsMMvOO';
+const checkAuth = require('../middleware/check-auth');
 									
 // @Route : /user/fetch
 // @function : fetch all users
-// @access : Protected
+// @access : Public
 // @input : N.A.
 // @output : JSON object containing status code and user data (if executed successfully) 
-router.get(ROUTE_DATA.FETCH_USERS, (req,res) => {
+router.get(ROUTE_DATA.FETCH_USERS, checkAuth, (req,res) => {
 	console.log("in /");
 	
 	console.log("DB connected");
@@ -47,39 +48,35 @@ router.get(ROUTE_DATA.FETCH_USERS, (req,res) => {
 // @output : JSON object containing status code and user data (if executed successfully) 
 router.post(ROUTE_DATA.SIGNIN, (req, res) => {
 	console.log("In /signin");
-	 
+	
 	 
 	let {email, password} = req.body;
 	console.log("email", email);
 	model.fetchUserEmail( dbConn, SQL.FIND_USER_MAIL, email)
 		 .then( (data) => {
 			 	if(data === null || data.length===0 ) {
-			 		res.send({status: 400, message: 'email not found'});	
+			 		res.send({status: 400, message: 'Invalid email password combination'});	
 			 	}
 			 	else {
-					  	bcrypt.hash(password, passHash)		//encrypt input password with help of salt 
-					  		    .then( (hash) => {
-					  		    	console.log(hash);
-					  		    	const fetchPass = data[0].password;
-					  		    	console.log(fetchPass);
-					  		    	if(hash === fetchPass) {
-					  		    		const token = jwt.sign({email, password}, passHash);
-					  		    		const userId = data[0].userId;
-					  		    		model.saveToken(dbConn, SQL.SAVE_TOKEN, {token, userId})
-					  		    				 .then( (token) => {
-					  		    						res.send({status: 200, token });		 	
-					  		    				 }).catch( (err) => {
-					  		    				 		res.send({status: 400, message: 'Something went wrong'});
-					  		    				 })
-					  		    		
-					  		    	}
-					  		    	else {
-														res.send({status: 400, message: 'Invalid email password combination'});
-											}
-						  		  }).catch( (err) => {
-						  		  	console.log("error", err);
-										   	res.send({status: 400, message: 'Something went wrong'});
-						  		  });
+
+					bcrypt.compare(req.body.password, data[0].password)
+						  .then( (result) => {
+							  console.log("result", result);
+							  if(result)  {
+								  const token = jwt.sign({
+									  email : data[0].email,
+								 },  appData.JWT_SECRET,
+								 {
+									 expiresIn : "1h"
+								 });
+								 res.send( {status:200, token});
+							  }
+							  else 
+							 	 return res.send({status: 400, message: 'Invalid email password combination'});
+						  }).catch( (err) => {
+							  console.log("err", err)
+								res.send({status: 500, message: 'Something went wrong'});
+						  })
 			 	}
 		 });		
 });
@@ -91,7 +88,40 @@ router.post(ROUTE_DATA.SIGNIN, (req, res) => {
 // @input : First name, last name, email & password
 // @output : JSON object containing status code and user data (if executed successfully) 
 router.post(ROUTE_DATA.SIGNUP, (req,res) => {
-	res.send({});
+	console.log("In / singup");
+	let {firstName, lastName, email, password} = req.body;
+	model.fetchUserEmail(dbConn, SQL.FIND_USER_MAIL, email)
+		 .then( (data) => {
+			 if(data.length) {
+				 console.log("data>>>", data);
+				 res.send({status:400, message: "Email already exists" });
+			 }
+			 else {
+				 bcrypt.hash(password, 10)
+				 	   .then( (hash) => {
+							  req.body.password = hash;
+							  model.signup(dbConn, SQL.CREATE_NEW_USER, req.body)
+							  	   .then( (result) => {
+										 console.log("result>>>", result.affectedRows)
+										 if(result.affectedRows > 0) {
+											const token = jwt.sign({
+																email : email,
+															},  appData.JWT_SECRET,
+															{
+																expiresIn : "1h"
+															});
+											res.send( {status:200, token});
+										 } else {
+											 res.send({status:500, message : "something went wrong"});
+										 }
+									 }).catch( (err) => {
+										 console.log("error", err);
+										res.send({status:500, message : "something went wrong"});
+									 })
+						})
+			 }
+		 })
+	
 });
 
 
@@ -101,7 +131,7 @@ router.post(ROUTE_DATA.SIGNUP, (req,res) => {
 // @input : email, newEmail, newPassword, newFName, newLName
 // @output : JSON object containing status code and success/error message
 
-router.post(ROUTE_DATA.UPDATE, (req,res) => {
+router.post(ROUTE_DATA.UPDATE, checkAuth, (req,res) => {
 	console.log("In /update");
 	const {newFName, newLName, email, newEmail, newPassword} = req.body;
 	model.fetchUserEmail( dbConn, SQL.FIND_USER_MAIL, email)

@@ -4,12 +4,13 @@ module.exports.appStrings = {
 
 module.exports.appData = {
 	USER_ROUTE : '/user',
+	JWT_SECRET : "secretkey123@",
 };
 
 module.exports.dbData = {
-	DB_NAME : 'chefling',
+	DB_NAME : 'chef',
 	USER_NAME : 'root',
-	PASS : 'ans',
+	PASS : '',
 	DB_HOST : 'localhost'
 };
 

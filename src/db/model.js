@@ -40,6 +40,17 @@ const models = {
 				resolve(results);	
 			});
 		});
+	},
+	signup : (dbConn, query, data) => {
+		return new Promise( (resolve, reject) => {
+			const {firstName, lastName, email, password} = data;
+			dbConn.query( query, [firstName, lastName, email, password], (err, result) => {
+				if(err)  {
+					reject(err);
+				}
+				resolve(result);
+			});
+		});
 	}
 };
 
