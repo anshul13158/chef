@@ -2,8 +2,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const mysql = require('mysql');
+const dotenv = require('dotenv');
 
 const app = express();
+
+dotenv.config();
 
 //File contains all string constants in form of object literals
 const APP_DATA_OBJ = require('./src/appData');
@@ -18,7 +21,7 @@ const APP_DATA = APP_DATA_OBJ.appData;
 const userRoute = require(APP_STRINGS.USER_ROUTE_FILE); 
 
 //Port no. : TAKE FROM ENV FILE
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));

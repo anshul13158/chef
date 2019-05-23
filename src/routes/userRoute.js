@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+
 //used for password hashing and un-hashing
 var bcrypt = require('bcryptjs');
 
@@ -10,35 +11,34 @@ const model = require('../db/model.js');
 //DB Connection object
 const dbConn = require('../db/config').conn;
 
-const appData = require('../appData').appData;
-
 //File contains string(like routes)
 const ROUTE_DATA = require('../appData').routeData;
+const appData = require('../appData').appData;
+
 
 //File contains SQL queries
 const SQL = require('../db/sqlQueries');
 
 const checkAuth = require('../middleware/check-auth');
-									
+						
+
 // @Route : /user/fetch
 // @function : fetch all users
 // @access : Public
 // @input : N.A.
 // @output : JSON object containing status code and user data (if executed successfully) 
-router.get(ROUTE_DATA.FETCH_USERS, checkAuth, (req,res) => {
-	console.log("in /");
-	
-	console.log("DB connected");
+router.get(ROUTE_DATA.FETCH_USERS, (req,res) => {
 	const fetchUsers = SQL.FETCH_ALL;
 	model.fetchUsers(dbConn, fetchUsers)
 		 .then( (data) => {
 		 	res.send({status:200, data});
 		 })
 		 .catch( (err) => {
-		 	console.log(err);
+		 	
 		 	res.send({status:400, err});
 		 });
 });
+
 
 
 // @Route : /user/signIn
@@ -46,12 +46,9 @@ router.get(ROUTE_DATA.FETCH_USERS, checkAuth, (req,res) => {
 // @access : Public
 // @input : Email and password
 // @output : JSON object containing status code and user data (if executed successfully) 
-router.post(ROUTE_DATA.SIGNIN, (req, res) => {
-	console.log("In /signin");
-	
-	 
+router.post(ROUTE_DATA.SIGNIN, (req, res) => {	 
 	let {email, password} = req.body;
-	console.log("email", email);
+	
 	model.fetchUserEmail( dbConn, SQL.FIND_USER_MAIL, email)
 		 .then( (data) => {
 			 	if(data === null || data.length===0 ) {
@@ -61,11 +58,11 @@ router.post(ROUTE_DATA.SIGNIN, (req, res) => {
 
 					bcrypt.compare(req.body.password, data[0].password)
 						  .then( (result) => {
-							  console.log("result", result);
+							  
 							  if(result)  {
 								  const token = jwt.sign({
 									  email : data[0].email,
-								 },  appData.JWT_SECRET,
+								 },  process.env.JWT_SECRET,
 								 {
 									 expiresIn : "1h"
 								 });
@@ -74,12 +71,13 @@ router.post(ROUTE_DATA.SIGNIN, (req, res) => {
 							  else 
 							 	 return res.send({status: 400, message: 'Invalid email password combination'});
 						  }).catch( (err) => {
-							  console.log("err", err)
+							  
 								res.send({status: 500, message: 'Something went wrong'});
 						  })
 			 	}
 		 });		
 });
+
 
 
 // @Route : /user/signUp
@@ -88,12 +86,11 @@ router.post(ROUTE_DATA.SIGNIN, (req, res) => {
 // @input : First name, last name, email & password
 // @output : JSON object containing status code and user data (if executed successfully) 
 router.post(ROUTE_DATA.SIGNUP, (req,res) => {
-	console.log("In / singup");
 	let {firstName, lastName, email, password} = req.body;
 	model.fetchUserEmail(dbConn, SQL.FIND_USER_MAIL, email)
 		 .then( (data) => {
 			 if(data.length) {
-				 console.log("data>>>", data);
+				 
 				 res.send({status:400, message: "Email already exists" });
 			 }
 			 else {
@@ -102,11 +99,11 @@ router.post(ROUTE_DATA.SIGNUP, (req,res) => {
 							  req.body.password = hash;
 							  model.signup(dbConn, SQL.CREATE_NEW_USER, req.body)
 							  	   .then( (result) => {
-										 console.log("result>>>", result.affectedRows)
+										 
 										 if(result.affectedRows > 0) {
 											const token = jwt.sign({
 																email : email,
-															},  appData.JWT_SECRET,
+															},  process.env.JWT_SECRET,
 															{
 																expiresIn : "1h"
 															});
@@ -115,7 +112,7 @@ router.post(ROUTE_DATA.SIGNUP, (req,res) => {
 											 res.send({status:500, message : "something went wrong"});
 										 }
 									 }).catch( (err) => {
-										 console.log("error", err);
+										 
 										res.send({status:500, message : "something went wrong"});
 									 })
 						})
@@ -125,6 +122,7 @@ router.post(ROUTE_DATA.SIGNUP, (req,res) => {
 });
 
 
+
 // @Route : /user/Update
 // @function : Update user data
 // @access : protected
@@ -132,35 +130,62 @@ router.post(ROUTE_DATA.SIGNUP, (req,res) => {
 // @output : JSON object containing status code and success/error message
 
 router.post(ROUTE_DATA.UPDATE, checkAuth, (req,res) => {
-	console.log("In /update");
-	const {newFName, newLName, email, newEmail, newPassword} = req.body;
+	
+	let {newFName, newLName, email, newEmail, newPassword} = req.body;
+	if( (email === '' || email === undefined || email===null) && ((newEmail === '' || newEmail === undefined || newEmail===null) ) )  {
+		return res.send({status:400, message: "Email can't be empty"});
+	}
+
+	if (newPassword === '' || newPassword === undefined || newPassword===null) {
+			return res.send({status:400, message: "password can't be empty"});
+	}
+
+
+	newFName = newFName ? newFName : ' ';
+	newLName = newLName ? newLName : ' ';
+	
+
+
 	model.fetchUserEmail( dbConn, SQL.FIND_USER_MAIL, email)
 			 .then( (data) => {
 			 		if(data === null || data.length===0 ) {
-			 			res.send({status: 400, message: 'User not found'});	
+			 			return res.send({status: 400, message: 'User not found'});	
 			 		}
 			 		else {
-			 			console.log("Data>>>",data);
-			 			req.body.userId = data[0].userId;
-			 			bcrypt.hash(newPassword, passHash)		//encrypt input password with help of salt 
-					  		    .then( (hash) => {
-					  		    		req.body.newPassword = hash;
-					  		    		model.updateUser(dbConn, SQL.UPDATE_USER, req.body)
-					  		    				 .then( (result) => {
-						  		    				 	if(result) {
-						  		    						res.send({status: 200, message: 'Updation successfull'});		 		
-						  		    				 	}
-						  		    				 	else {
-						  		    				 		res.send({status: 400, message: 'Updation Failed'});		 			
-						  		    				 	}
-					  		    				 }).catch( (err) => {
-					  		    				 	console.log("err", err);
-					  		    				 	res.send({status: 400, message: 'Something went wrong'});		 		
-					  		    				 })	
-					  		    }).catch( (err) => {
-						  		  	console.log("error", err);
-										   	res.send({status: 400, message: 'Something went wrong'});
-						  		  });
+			 			model.fetchUserEmail (dbConn, SQL.FIND_USER_MAIL, newEmail)
+			 				   .then( (newData) => {
+			 				   		
+			 				   		if(newData.length != 0) {
+			 				   			return res.send({status:400, message:"New Email id already present in DB"});
+			 				   		}
+			 				   		else {
+			 				   				
+									 			req.body.userId = data[0].userId;
+									 			bcrypt.hash(newPassword, 10)	//encrypt input password with help of salt 
+											  		    .then( (hash) => {
+											  		    		req.body.newPassword = hash;
+											  		    		model.updateUser(dbConn, SQL.UPDATE_USER, req.body)
+											  		    				 .then( (result) => {
+												  		    				 	if(result) {
+												  		    						res.send({status: 200, message: 'Updation successfull'});		 		
+												  		    				 	}
+												  		    				 	else {
+												  		    				 		res.send({status: 400, message: 'Updation Failed'});		 			
+												  		    				 	}
+											  		    				 }).catch( (err) => {
+											  		    				 	
+											  		    				 	res.send({status: 400, message: 'Somethings went wrong'});		 		
+											  		    				 })	
+											  		    }).catch( (err) => {
+												  		  	
+																   	res.send({status: 400, message: 'Somethingss went wrong'});
+												  		  });
+									 				   		}
+			 				   	}).catch( (err) => {
+			 				   			
+			 				   			return res.send({status: 400, message: 'Somethingsss went wrong'});
+			 				   		})
+			 			
 			 		}
 			 })
 });

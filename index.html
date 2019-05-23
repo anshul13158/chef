@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>API tester</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+	<h3 class="text-center">
+		API tester
+	</h3>
+
+	 <br><br><br>
+
+	 <div class="col-md-12">
+		 <h4>Fetch Users</h4>
+		 <form class="form-inline" action="http://localhost:3000/user/fetch" method="GET">
+		 		<input type="submit" name="" value="fetch users" />
+		 </form>	
+		 <hr/>
+		 <br><br>
+
+		 <h4>Update User (Protected route; needs auth token)</h4>
+		 <form class="form" action="http://localhost:3000/user/update" method="POST">
+		 		<div class="form-group">
+		 			<label>Email</label>
+		 			<input type="email" name="email">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>New Email</label>
+		 			<input type="email" name="newEmail">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>New Password</label>
+		 			<input type="password" name="newPassword">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>New First Name </label>
+		 			<input type="text" name="newFName">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>New Last Name</label>
+		 			<input type="text" name="newLName">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label><b>Token</b></label>
+		 			<input type="text" name="token">
+		 		</div>
+		 		<input type="submit" name="" value="update">	
+		 		
+		 </form>	
+		 <hr/>
+		 <br><br>
+
+		 <h4>Sign in</h4>
+		 <form class="form" action="http://localhost:3000/user/signIn" method="POST">
+		 		<div class="form-group">
+		 			<label>Email</label>
+		 			<input type="email" name="email">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>Password</label>
+		 			<input type="password" name="password">
+		 		</div>	
+		 		<input type="submit" name="" value="Login" />
+		 </form>	
+		 <hr/>
+		 <br><br>
+
+		 <h4>Sign Up</h4>
+		 <form class="form" action="http://localhost:3000/user/signUp" method="POST">
+		 		<div class="form-group">
+		 			<label>Email</label>
+		 			<input type="email" name="email">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>Password</label>
+		 			<input type="password" name="password">
+		 		</div>	
+		 		<div class="form-group">
+		 			<label>First Name</label>
+		 			<input type="text" name="firstName">
+		 		</div>
+		 		<div class="form-group">
+		 			<label>Last Name</label>
+		 			<input type="text" name="lastName">
+		 		</div>
+		 		<input type="submit" name="" value="SignUp" />
+		 </form>	
+		 <hr/>
+		 <br><br>
+	</div>	 
+
+
+
+
+
+</body>
+</html>
